@@ -6,17 +6,15 @@
 #include <QTimer>
 #include <QInputDialog>
 
-
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    connect(ui->hitButton, SIGNAL (released()), this, SLOT (hit()));
-    connect(ui->betButton, SIGNAL (released()), this, SLOT (changeBet()));
-    connect(ui->playButton, SIGNAL (released()), this, SLOT (play()));
-    connect(ui->standButton, SIGNAL (released()), this, SLOT (stand()));
+    connect(ui->hitButton, SIGNAL(released()), this, SLOT(hit()));
+    connect(ui->betButton, SIGNAL(released()), this, SLOT(changeBet()));
+    connect(ui->playButton, SIGNAL(released()), this, SLOT(play()));
+    connect(ui->standButton, SIGNAL(released()), this, SLOT(stand()));
 
     ui->betLabel->setText("Your Bet: 20");
     ui->moneyLabel->setText("Money: 1000");
@@ -54,17 +52,6 @@ QString chooseCard()
     }
 }
 
-int cardValue(QString card)
-{
-    QStringList cList = card.split(" ");
-    return cList.value(0).toInt();
-}
-
-QString card(QString card)
-{
-    return card.remove(" ");
-}
-
 void MainWindow::hit()
 {
     QString card = chooseCard();
@@ -91,7 +78,7 @@ void MainWindow::hit()
     {
         stand();
     }
-    if ((total + value) > 21)
+    else if ((total + value) > 21)
     {
         while (playerAces > 0)
         {
@@ -100,7 +87,7 @@ void MainWindow::hit()
             ui->playerCounterLabel->setText(QString::number(total));
             playerAces -= 1;
         }
-        if ((total + value) > 21)
+        if (ui->playerCounterLabel->text().toInt() > 21)
         {
             ui->hitButton->setEnabled(false);
             ui->standButton->setEnabled(false);
@@ -135,9 +122,17 @@ void MainWindow::dealerHit()
     ui->dealerCardLabel->setText(str + " " + card.remove(" "));
     int total = ui->dealerCounterLabel->text().toInt();
     ui->dealerCounterLabel->setText(QString::number(total + value));
+    if ((total + value) > 21)
+    {
+        while (dealerAces > 0)
+        {
+            total = ui->dealerCounterLabel->text().toInt();
+            total -= 10;
+            ui->dealerCounterLabel->setText(QString::number(total));
+            dealerAces -= 1;
+        }
+    }
 }
-
-
 
 void MainWindow::clear()
 {
@@ -159,17 +154,25 @@ void MainWindow::clear()
 void MainWindow::play()
 {
     clear();
+    ui->playButton->setEnabled(false);
+    ui->betButton->setEnabled(false);
+    ui->standButton->setEnabled(true);
+    ui->hitButton->setEnabled(true);
     hit();
     delay();
     hit();
     dealerHit();
     dealerHit();
-    ui->playButton->setEnabled(false);
-    ui->betButton->setEnabled(false);
-    ui->standButton->setEnabled(true);
-    ui->hitButton->setEnabled(true);
-
-
+    if (ui->playerCounterLabel->text() == "21" && ui->dealerCounterLabel->text() != "21")
+    {
+        // stand();
+        ui->playerTitleLabel->setText("Black Jack!");
+    }
+    else if (ui->playerCounterLabel->text() != "21" && ui->dealerCounterLabel->text() == "21")
+    {
+        stand();
+        ui->dealerTitleLabel->setText("Dealer Black Jack");
+    }
 }
 
 void MainWindow::stand()
@@ -218,7 +221,7 @@ void MainWindow::changeBet()
 {
     bool ok;
     QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
-                                         tr("User name:"), QLineEdit::Normal,
+                                         tr("New Bet:"), QLineEdit::Normal,
                                          "", &ok);
     if (ok && !text.isEmpty())
         ui->betLabel->setText("Your Bet: " + text);
@@ -239,4 +242,3 @@ void MainWindow::updateMoney(bool win)
         ui->moneyLabel->setText("Money: " + QString::number(total - bet));
     }
 }
-
